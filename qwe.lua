@@ -382,23 +382,20 @@ local function equipPunch()
     return char:FindFirstChild("Punch") ~= nil
 end
 
--- ===============================
--- BRING (HIT GUARANTEED)
--- ===============================
 local function breakArms(targetChar)
     pcall(function()
-        local leftArm =
+        local la =
             targetChar:FindFirstChild("Left Arm")
             or targetChar:FindFirstChild("LeftHand")
             or targetChar:FindFirstChild("LeftLowerArm")
 
-        local rightArm =
+        local ra =
             targetChar:FindFirstChild("Right Arm")
             or targetChar:FindFirstChild("RightHand")
             or targetChar:FindFirstChild("RightLowerArm")
 
-        if leftArm then leftArm:Destroy() end
-        if rightArm then rightArm:Destroy() end
+        if la then la:Destroy() end
+        if ra then ra:Destroy() end
     end)
 end
 
@@ -410,35 +407,38 @@ local function bringTarget(plr)
     local targetChar = plr.Character
     if not myChar or not targetChar then return end
 
-    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    local myHand =
+        myChar:FindFirstChild("RightHand")
+        or myChar:FindFirstChild("Right Arm")
+        or myChar:FindFirstChild("RightLowerArm")
+
     local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     local head = targetChar:FindFirstChild("Head")
-    if not myHRP or not targetHRP or not head then return end
 
-    -- KOLLARI SİL (HER MODDA)
+    if not myHand or not targetHRP or not head then return end
+
+    -- KOLLARI SİL (HER MOD)
     breakArms(targetChar)
 
-    -- Fizik güvenliği
-    targetHRP.Velocity = Vector3.zero
-    targetHRP.RotVelocity = Vector3.zero
-    targetHRP.Anchored = false
+    -- Fizik temizliği
+    targetHRP.AssemblyLinearVelocity = Vector3.zero
+    targetHRP.AssemblyAngularVelocity = Vector3.zero
     targetHRP.CanCollide = false
+    targetHRP.Anchored = false
 
-    head.Anchored = false
     head.CanCollide = false
+    head.Anchored = false
 
-    -- Bring Mode ayarları
-    if bringMode == "Bring" then
-        head.Transparency = 0
-    else
+    -- MOD DAVRANIŞI
+    if bringMode == "No Bring" then
         head.Transparency = 1
+    else
+        head.Transparency = 0
     end
 
-    -- Yumruk mesafesi
-    local offset = CFrame.new(0, 0, -2.3)
-
-    -- SADECE TARGET ÇEKİLİR
-    targetHRP.CFrame = myHRP.CFrame * offset
+    -- 🔥 SAĞ ELE SABİTLEME (ÖNÜNE DEĞİL)
+    local offset = CFrame.new(0, -0.3, -0.8)
+    targetHRP.CFrame = myHand.CFrame * offset
 end
 
 
