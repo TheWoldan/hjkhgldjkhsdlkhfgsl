@@ -861,6 +861,14 @@ local rockList = {
     "Mystic Rock"
 }
 
+local rockYOffset = {
+    ["Ancient Jungle Rock"] = -5,
+    ["Muscle King Mountain"] = 0,
+    ["Rock Of Legends"] = 4,
+    ["Inferno Rock"] = 8,
+    ["Mystic Rock"] = 15
+}
+
 Tabs.Exploits:AddDropdown("FakeRockSelector", {
     Title = "Select Fake Rock",
     Values = rockList,
@@ -896,7 +904,8 @@ Tabs.Exploits:AddToggle("FakeRockPunch", {
                 runService:BindToRenderStep("KeepRockUp", Enum.RenderPriority.First.Value, function()
                     if keepRockUp and movedRock then
                         movedRock.Anchored = true
-                        movedRock.CFrame = CFrame.new(targetPosition)
+                        local yOffset = rockYOffset[selectedRockName] or 0
+                        movedRock.CFrame = CFrame.new(targetPosition + Vector3.new(0, yOffset, 0))
                     end
                 end)
             end
