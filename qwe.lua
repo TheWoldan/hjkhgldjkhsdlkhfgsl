@@ -846,12 +846,42 @@ Tabs.Main:AddToggle("AntiAFK", {
     end
 end)
 
-local runService = game:GetService("RunService")
+local RunService = game:GetService("RunService")
+
 local keepRockUp = false
+local punchFakeRock = false
+
 local targetY = 5000
 local targetPosition = Vector3.new(0, targetY, 0)
 
-Tabs.Main:AddToggle("FakeRockPunch", {
+local selectedRockName = "Muscle King Mountain"
+local movedRock = nil
+local originalCFrame = nil
+local platform = nil
+
+-- ===============================
+-- ROCK DROPDOWN
+-- ===============================
+local rockList = {
+    "Ancient Jungle Rock",
+    "Muscle King Mountain",
+    "Rock Of Legends",
+    "Inferno Rock",
+    "Mystic Rock"
+}
+
+Tabs.Exploits:AddDropdown("FakeRockSelector", {
+    Title = "Select Fake Rock",
+    Values = rockList,
+    Default = "Muscle King Mountain"
+}):OnChanged(function(v)
+    selectedRockName = v
+end)
+
+-- ===============================
+-- TOGGLE
+-- ===============================
+Tabs.Exploits:AddToggle("FakeRockPunch", {
     Title = "Auto Fake Rock Punch",
     Default = false
 }):OnChanged(function(Value)
@@ -864,49 +894,56 @@ Tabs.Main:AddToggle("FakeRockPunch", {
             local char = player.Character or player.CharacterAdded:Wait()
             local hrp = char:WaitForChild("HumanoidRootPart")
 
-            local rock = workspace.machinesFolder["Muscle King Mountain"]:FindFirstChild("Rock")
-            if not rock then
-                warn("Rock bulunamadı.")
+            -- SEÇİLEN KAYA
+            local rockModel = workspace:WaitForChild("machinesFolder"):FindFirstChild(selectedRockName)
+            if not rockModel then
+                warn("Seçilen kaya bulunamadı:", selectedRockName)
+                return
+            end
+
+            local rock = rockModel:FindFirstChild("Rock") or rockModel
+            if not rock or not rock:IsA("BasePart") then
+                warn("Rock part bulunamadı:", selectedRockName)
                 return
             end
 
             originalCFrame = rock.CFrame
             movedRock = rock
 
-            -- Kayayı sabitlemek için sürekli kontrol
-            local function maintainRock()
-                runService:BindToRenderStep("KeepRockUp", Enum.RenderPriority.First.Value, function()
-                    if keepRockUp and movedRock then
-                        movedRock.Anchored = true
-                        movedRock.CFrame = CFrame.new(targetPosition)
-                    end
-                end)
-            end
+            -- Kayayı yukarıda sabitle
+            RunService:BindToRenderStep("KeepRockUp", Enum.RenderPriority.First.Value, function()
+                if keepRockUp and movedRock then
+                    movedRock.Anchored = true
+                    movedRock.CFrame = CFrame.new(targetPosition)
+                end
+            end)
 
-            maintainRock()
-
-            -- Altına platform
+            -- Alt platform
             platform = Instance.new("Part")
             platform.Size = Vector3.new(500, 20, 500)
             platform.Anchored = true
-            platform.Position = targetPosition - Vector3.new(0, rock.Size.Y + -100, 0)
+            platform.Transparency = 1
+            platform.Position = targetPosition - Vector3.new(0, rock.Size.Y + 100, 0)
             platform.Name = "FakeRockPlatform"
             platform.Parent = workspace
 
-            -- Oyuncuyu ışınla
+            -- Oyuncuyu önüne ışınla
             local frontPos = targetPosition + Vector3.new(0, 20, -50)
             hrp.CFrame = CFrame.new(frontPos, targetPosition)
         end)
     else
-        -- Toggle kapandıysa geri al
+        -- KAPATILDI
         keepRockUp = false
-        game:GetService("RunService"):UnbindFromRenderStep("KeepRockUp")
+        RunService:UnbindFromRenderStep("KeepRockUp")
 
         if movedRock and originalCFrame then
             movedRock.CFrame = originalCFrame
+            movedRock.Anchored = false
         end
+
         if platform then
             platform:Destroy()
+            platform = nil
         end
     end
 end)
