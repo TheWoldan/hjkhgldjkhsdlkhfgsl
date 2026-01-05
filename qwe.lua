@@ -415,30 +415,62 @@ local function bringTarget(plr)
     local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     local head = targetChar:FindFirstChild("Head")
 
-    if not myHand or not targetHRP or not head then return end
+    if not myHand or not head then return end
 
     -- KOLLARI SİL (HER MOD)
-    breakArms(targetChar)
+    pcall(function()
+        local la =
+            targetChar:FindFirstChild("Left Arm")
+            or targetChar:FindFirstChild("LeftHand")
+            or targetChar:FindFirstChild("LeftLowerArm")
 
-    -- Fizik temizliği
+        local ra =
+            targetChar:FindFirstChild("Right Arm")
+            or targetChar:FindFirstChild("RightHand")
+            or targetChar:FindFirstChild("RightLowerArm")
+
+        if la then la:Destroy() end
+        if ra then ra:Destroy() end
+    end)
+
+    -- =========================
+    -- NO BRING MODE
+    -- =========================
+    if bringMode == "No Bring" then
+        head.Anchored = false
+        head.CanCollide = false
+        head.Transparency = 1
+
+        head.AssemblyLinearVelocity = Vector3.zero
+        head.AssemblyAngularVelocity = Vector3.zero
+
+        -- pozisyon
+        head.CFrame = myHand.CFrame * CFrame.new(0, -0.2, -0.6)
+
+        -- weld (SADECE HEAD)
+        if not head:FindFirstChild("NoBringWeld") then
+            local w = Instance.new("WeldConstraint")
+            w.Name = "NoBringWeld"
+            w.Part0 = myHand
+            w.Part1 = head
+            w.Parent = head
+        end
+
+        return
+    end
+
+    -- =========================
+    -- BRING MODE (DOKUNMADIK)
+    -- =========================
+    if not targetHRP then return end
+
     targetHRP.AssemblyLinearVelocity = Vector3.zero
     targetHRP.AssemblyAngularVelocity = Vector3.zero
     targetHRP.CanCollide = false
-    targetHRP.Anchored = false
 
-    head.CanCollide = false
-    head.Anchored = false
+    head.Transparency = 0
 
-    -- MOD DAVRANIŞI
-    if bringMode == "No Bring" then
-        head.Transparency = 1
-    else
-        head.Transparency = 0
-    end
-
-    -- 🔥 SAĞ ELE SABİTLEME (ÖNÜNE DEĞİL)
-    local offset = CFrame.new(0, -0.3, -0.8)
-    targetHRP.CFrame = myHand.CFrame * offset
+    targetHRP.CFrame = myHand.CFrame * CFrame.new(0, -0.3, -0.8)
 end
 
 
