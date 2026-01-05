@@ -445,55 +445,46 @@ local function bringTarget(plr)
         if neck and neck:IsA("Motor6D") then
             neck.Enabled = false
         end
-
+    
         head.Anchored = false
         head.CanCollide = false
         head.Massless = true
         head.Transparency = 1
-
+    
         head.AssemblyLinearVelocity = Vector3.zero
         head.AssemblyAngularVelocity = Vector3.zero
-
-        -- Daha önce bağlandıysa tekrar bağlama
-        if noBringConnections[plr] then return end
-
-        -- SADECE HEAD'i elin önünde sabitle
-            local RunService = game:GetService("RunService")
-            
-            -- Daha stabil referans
-            local refPart =
-                myChar:FindFirstChild("RightLowerArm")
-                or myChar:FindFirstChild("RightHand")
-                or myChar:FindFirstChild("Right Arm")
-            
-            if not refPart then return end
-            
-            noBringConnections[plr] = RunService.RenderStepped:Connect(function()
-                if not head or not head.Parent or not refPart or not refPart.Parent then
-                    if noBringConnections[plr] then
-                        noBringConnections[plr]:Disconnect()
-                        noBringConnections[plr] = nil
-                    end
-                    return
-                end
-            
-                -- Ele TAM hizalama (daha içeri & sabit)
-                head.CFrame =
-                    refPart.CFrame
-                    * CFrame.new(0, -0.1, -0.35)
-                    * CFrame.Angles(0, math.rad(180), 0)
-            end)
-            if not head or not head.Parent or not myHand or not myHand.Parent then
+    
+        -- Zaten bağlıysa tekrar bağlama
+        if noBringConnections[plr] then
+            return
+        end
+    
+        local RunService = game:GetService("RunService")
+    
+        -- Stabil referans
+        local refPart =
+            myChar:FindFirstChild("RightLowerArm")
+            or myChar:FindFirstChild("RightHand")
+            or myChar:FindFirstChild("Right Arm")
+    
+        if not refPart then return end
+    
+        noBringConnections[plr] = RunService.RenderStepped:Connect(function()
+            if not head or not head.Parent or not refPart or not refPart.Parent then
                 if noBringConnections[plr] then
                     noBringConnections[plr]:Disconnect()
                     noBringConnections[plr] = nil
                 end
                 return
             end
-
-            head.CFrame = myHand.CFrame * CFrame.new(0, -0.15, -0.6)
-        end
-
+    
+            -- ELE TAM SABİT (asıl olay burada)
+            head.CFrame =
+                refPart.CFrame
+                * CFrame.new(0, -0.1, -0.35)
+                * CFrame.Angles(0, math.rad(180), 0)
+        end)
+    
         return
     end
 
