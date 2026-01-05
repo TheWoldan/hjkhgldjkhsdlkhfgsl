@@ -400,7 +400,7 @@ local function breakArms(targetChar)
 end
 
 local RunService = game:GetService("RunService")
-local noBringConnections = {}
+noBringConnections = noBringConnections or {}
 
 local function bringTarget(plr)
     if plr == lp then return end
@@ -412,15 +412,17 @@ local function bringTarget(plr)
 
     local myHand =
         myChar:FindFirstChild("RightHand")
-        or myChar:FindFirstChild("Right Arm")
         or myChar:FindFirstChild("RightLowerArm")
+        or myChar:FindFirstChild("Right Arm")
 
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     local head = targetChar:FindFirstChild("Head")
+    local hrp = targetChar:FindFirstChild("HumanoidRootPart")
 
     if not myHand or not head then return end
 
+    -- =========================
     -- KOLLARI SİL (HER MOD)
+    -- =========================
     pcall(function()
         local la =
             targetChar:FindFirstChild("Left Arm")
@@ -437,70 +439,57 @@ local function bringTarget(plr)
     end)
 
     -- =========================
-    -- NO BRING MODE (REAL HITBOX)
+    -- NO BRING MODE (SADECE HEAD)
     -- =========================
     if bringMode == "No Bring" then
-        -- Neck motorunu kapat (body çekilmesin)
+        -- Body'nin head'i sürüklememesi için neck kapat
         local neck = targetChar:FindFirstChild("Neck", true)
         if neck and neck:IsA("Motor6D") then
             neck.Enabled = false
         end
-    
+
         head.Anchored = false
         head.CanCollide = false
         head.Massless = true
         head.Transparency = 1
-    
+
         head.AssemblyLinearVelocity = Vector3.zero
         head.AssemblyAngularVelocity = Vector3.zero
-    
+
         -- Zaten bağlıysa tekrar bağlama
-        if noBringConnections[plr] then
-            return
-        end
-    
-        local RunService = game:GetService("RunService")
-    
-        -- Stabil referans
-        local refPart =
-            myChar:FindFirstChild("RightLowerArm")
-            or myChar:FindFirstChild("RightHand")
-            or myChar:FindFirstChild("Right Arm")
-    
-        if not refPart then return end
-    
+        if noBringConnections[plr] then return end
+
         noBringConnections[plr] = RunService.RenderStepped:Connect(function()
-            if not head or not head.Parent or not refPart or not refPart.Parent then
+            if not head.Parent or not myHand.Parent then
                 if noBringConnections[plr] then
                     noBringConnections[plr]:Disconnect()
                     noBringConnections[plr] = nil
                 end
                 return
             end
-    
-            -- ELE TAM SABİT (asıl olay burada)
+
+            -- ELE TAM YAPIŞTIR
             head.CFrame =
-                refPart.CFrame
+                myHand.CFrame
                 * CFrame.new(0, -0.1, -0.35)
                 * CFrame.Angles(0, math.rad(180), 0)
         end)
-    
+
         return
     end
 
     -- =========================
-    -- BRING MODE (DOKUNMADIK)
+    -- BRING MODE (AYNEN KORUNDU)
     -- =========================
-    if not targetHRP then return end
+    if not hrp then return end
 
-    targetHRP.AssemblyLinearVelocity = Vector3.zero
-    targetHRP.AssemblyAngularVelocity = Vector3.zero
-    targetHRP.CanCollide = false
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+    hrp.CanCollide = false
 
     head.Transparency = 0
-    targetHRP.CFrame = myHand.CFrame * CFrame.new(0, -0.3, -0.8)
+    hrp.CFrame = myHand.CFrame * CFrame.new(0, -0.3, -0.8)
 end
-
 
 
 -- ===============================
