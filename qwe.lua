@@ -846,22 +846,13 @@ Tabs.Main:AddToggle("AntiAFK", {
     end
 end)
 
-local RunService = game:GetService("RunService")
-
+local runService = game:GetService("RunService")
 local keepRockUp = false
-local punchFakeRock = false
-
 local targetY = 5000
 local targetPosition = Vector3.new(0, targetY, 0)
 
 local selectedRockName = "Muscle King Mountain"
-local movedRock = nil
-local originalCFrame = nil
-local platform = nil
 
--- ===============================
--- ROCK DROPDOWN
--- ===============================
 local rockList = {
     "Ancient Jungle Rock",
     "Muscle King Mountain",
@@ -878,9 +869,6 @@ Tabs.Exploits:AddDropdown("FakeRockSelector", {
     selectedRockName = v
 end)
 
--- ===============================
--- TOGGLE
--- ===============================
 Tabs.Exploits:AddToggle("FakeRockPunch", {
     Title = "Auto Fake Rock Punch",
     Default = false
@@ -894,56 +882,49 @@ Tabs.Exploits:AddToggle("FakeRockPunch", {
             local char = player.Character or player.CharacterAdded:Wait()
             local hrp = char:WaitForChild("HumanoidRootPart")
 
-            -- SEÇİLEN KAYA
-            local rockModel = workspace:WaitForChild("machinesFolder"):FindFirstChild(selectedRockName)
-            if not rockModel then
-                warn("Seçilen kaya bulunamadı:", selectedRockName)
-                return
-            end
-
-            local rock = rockModel:FindFirstChild("Rock") or rockModel
-            if not rock or not rock:IsA("BasePart") then
-                warn("Rock part bulunamadı:", selectedRockName)
+            local rock = workspace.machinesFolder[selectedRockName]:FindFirstChild("Rock")
+            if not rock then
+                warn("Rock bulunamadı.")
                 return
             end
 
             originalCFrame = rock.CFrame
             movedRock = rock
 
-            -- Kayayı yukarıda sabitle
-            RunService:BindToRenderStep("KeepRockUp", Enum.RenderPriority.First.Value, function()
-                if keepRockUp and movedRock then
-                    movedRock.Anchored = true
-                    movedRock.CFrame = CFrame.new(targetPosition)
-                end
-            end)
+            -- Kayayı sabitlemek için sürekli kontrol
+            local function maintainRock()
+                runService:BindToRenderStep("KeepRockUp", Enum.RenderPriority.First.Value, function()
+                    if keepRockUp and movedRock then
+                        movedRock.Anchored = true
+                        movedRock.CFrame = CFrame.new(targetPosition)
+                    end
+                end)
+            end
 
-            -- Alt platform
+            maintainRock()
+
+            -- Altına platform
             platform = Instance.new("Part")
             platform.Size = Vector3.new(500, 20, 500)
             platform.Anchored = true
-            platform.Transparency = 1
-            platform.Position = targetPosition - Vector3.new(0, rock.Size.Y + 100, 0)
+            platform.Position = targetPosition - Vector3.new(0, rock.Size.Y + -100, 0)
             platform.Name = "FakeRockPlatform"
             platform.Parent = workspace
 
-            -- Oyuncuyu önüne ışınla
+            -- Oyuncuyu ışınla
             local frontPos = targetPosition + Vector3.new(0, 20, -50)
             hrp.CFrame = CFrame.new(frontPos, targetPosition)
         end)
     else
-        -- KAPATILDI
+        -- Toggle kapandıysa geri al
         keepRockUp = false
-        RunService:UnbindFromRenderStep("KeepRockUp")
+        game:GetService("RunService"):UnbindFromRenderStep("KeepRockUp")
 
         if movedRock and originalCFrame then
             movedRock.CFrame = originalCFrame
-            movedRock.Anchored = false
         end
-
         if platform then
             platform:Destroy()
-            platform = nil
         end
     end
 end)
