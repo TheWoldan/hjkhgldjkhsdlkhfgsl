@@ -399,6 +399,9 @@ local function breakArms(targetChar)
     end)
 end
 
+local RunService = game:GetService("RunService")
+local noBringConnections = {}
+
 local function bringTarget(plr)
     if plr == lp then return end
     if whitelistTarget and plr.Name == whitelistTarget then return end
@@ -434,27 +437,38 @@ local function bringTarget(plr)
     end)
 
     -- =========================
-    -- NO BRING MODE
+    -- NO BRING MODE (REAL HITBOX)
     -- =========================
     if bringMode == "No Bring" then
+        -- Neck motorunu kapat (body çekilmesin)
+        local neck = targetChar:FindFirstChild("Neck", true)
+        if neck and neck:IsA("Motor6D") then
+            neck.Enabled = false
+        end
+
         head.Anchored = false
         head.CanCollide = false
+        head.Massless = true
         head.Transparency = 1
 
         head.AssemblyLinearVelocity = Vector3.zero
         head.AssemblyAngularVelocity = Vector3.zero
 
-        -- pozisyon
-        head.CFrame = myHand.CFrame * CFrame.new(0, -0.2, -0.6)
+        -- Daha önce bağlandıysa tekrar bağlama
+        if noBringConnections[plr] then return end
 
-        -- weld (SADECE HEAD)
-        if not head:FindFirstChild("NoBringWeld") then
-            local w = Instance.new("WeldConstraint")
-            w.Name = "NoBringWeld"
-            w.Part0 = myHand
-            w.Part1 = head
-            w.Parent = head
-        end
+        -- SADECE HEAD'i elin önünde sabitle
+        noBringConnections[plr] = RunService.Heartbeat:Connect(function()
+            if not head or not head.Parent or not myHand or not myHand.Parent then
+                if noBringConnections[plr] then
+                    noBringConnections[plr]:Disconnect()
+                    noBringConnections[plr] = nil
+                end
+                return
+            end
+
+            head.CFrame = myHand.CFrame * CFrame.new(0, -0.15, -0.6)
+        end)
 
         return
     end
@@ -469,9 +483,9 @@ local function bringTarget(plr)
     targetHRP.CanCollide = false
 
     head.Transparency = 0
-
     targetHRP.CFrame = myHand.CFrame * CFrame.new(0, -0.3, -0.8)
 end
+
 
 
 -- ===============================
