@@ -492,7 +492,7 @@ local function bringTarget(plr)
             end
 
             head.CFrame = myHand.CFrame * CFrame.new(0, -0.15, -0.6)
-        end)
+        end
 
         return
     end
