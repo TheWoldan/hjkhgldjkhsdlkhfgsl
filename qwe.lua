@@ -307,13 +307,10 @@ autoCrystalToggle:OnChanged(function(value)
     end
 end)
 
-
-
 -- ===============================
--- KILLER SYSTEM (FULL)
+-- KILLER SYSTEM (REWORKED)
 -- ===============================
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local lp = Players.LocalPlayer
 
 local autoKillAll = false
@@ -321,8 +318,6 @@ local autoKillTarget = false
 local bringMode = "Bring"
 local selectedTarget = nil
 local whitelistTarget = nil
-
-local welded = {}
 
 -- ===============================
 -- UI
@@ -370,15 +365,16 @@ Tabs.Killer:AddButton({
 -- ===============================
 -- UTILS
 -- ===============================
-local function getRightArm(char)
-    return char:FindFirstChild("RightHand")
-        or char:FindFirstChild("Right Arm")
-        or char:FindFirstChild("RightLowerArm")
+local function getChar(plr)
+    return plr.Character or plr.CharacterAdded:Wait()
+end
+
+local function getHRP(char)
+    return char:FindFirstChild("HumanoidRootPart")
 end
 
 local function equipPunch()
-    local char = lp.Character
-    if not char then return false end
+    local char = getChar(lp)
     local tool = lp.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
     if tool and tool.Parent ~= char then
         tool.Parent = char
@@ -386,57 +382,56 @@ local function equipPunch()
     return char:FindFirstChild("Punch") ~= nil
 end
 
-local function weldHead(head, arm)
-    if welded[head] then return end
-    local w = Instance.new("WeldConstraint")
-    w.Part0 = arm
-    w.Part1 = head
-    w.Parent = arm
-    welded[head] = true
-end
-
 -- ===============================
--- BRING LOGIC (SAFE)
+-- BRING (HIT GUARANTEED)
 -- ===============================
-local function bringCharacter(targetChar)
-    local myChar = lp.Character
-    if not myChar then return end
+local function bringTarget(plr)
+    if plr == lp then return end
+    if whitelistTarget and plr.Name == whitelistTarget then return end
 
-    local arm = getRightArm(myChar)
+    local myChar = getChar(lp)
+    local myHRP = getHRP(myChar)
+
+    local targetChar = plr.Character
+    if not myHRP or not targetChar then return end
+
+    local targetHRP = getHRP(targetChar)
     local head = targetChar:FindFirstChild("Head")
-    if not arm or not head then return end
+    if not targetHRP or not head then return end
 
-    head.Anchored = false
+    -- fizik güvenliği
+    targetHRP.Velocity = Vector3.zero
+    targetHRP.RotVelocity = Vector3.zero
+    targetHRP.Anchored = false
+    targetHRP.CanCollide = false
+
     head.CanCollide = false
+    head.Anchored = false
+
+    -- yumruk mesafesi (KRİTİK)
+    local offset =
+        bringMode == "Bring"
+        and CFrame.new(0, 0, -2.3)
+        or CFrame.new(1.2, 0, -2.3)
+
+    targetHRP.CFrame = myHRP.CFrame * offset
 
     if bringMode == "No Bring" then
         head.Transparency = 1
-        head.CFrame = arm.CFrame * CFrame.new(0.7, 0, 0)
     else
         head.Transparency = 0
-        head.CFrame = arm.CFrame * CFrame.new(0, -0.4, 0)
     end
-
-    weldHead(head, arm)
 end
 
 -- ===============================
--- CORE LOOP
+-- ATTACK
 -- ===============================
-local function handleKill(plr)
-    if plr == lp then return end
-    if whitelistTarget and plr.Name == whitelistTarget then return end
-    if not plr.Character or not plr.Character:FindFirstChild("Head") then return end
-
-    bringCharacter(plr.Character)
-
-    pcall(function()
-        lp.muscleEvent:FireServer("punch", "rightHand")
-    end)
+local function punch()
+    lp:WaitForChild("muscleEvent"):FireServer("punch", "rightHand")
 end
 
 -- ===============================
--- AUTO KILL ALL
+-- AUTO KILL (EVERYONE)
 -- ===============================
 Tabs.Killer:AddToggle("AutoKillAll", {
     Title = "Auto Kill (Everyone)",
@@ -449,17 +444,18 @@ Tabs.Killer:AddToggle("AutoKillAll", {
             while autoKillAll do
                 if equipPunch() then
                     for _, plr in ipairs(Players:GetPlayers()) do
-                        handleKill(plr)
+                        bringTarget(plr)
+                        punch()
                     end
                 end
-                task.wait(0.12)
+                task.wait(0.15)
             end
         end)
     end
 end)
 
 -- ===============================
--- AUTO KILL PLAYER
+-- AUTO KILL (SINGLE PLAYER)
 -- ===============================
 Tabs.Killer:AddToggle("AutoKillTarget", {
     Title = "Auto Kill Player",
@@ -473,15 +469,15 @@ Tabs.Killer:AddToggle("AutoKillTarget", {
                 if equipPunch() and selectedTarget then
                     local plr = Players:FindFirstChild(selectedTarget)
                     if plr then
-                        handleKill(plr)
+                        bringTarget(plr)
+                        punch()
                     end
                 end
-                task.wait(0.12)
+                task.wait(0.15)
             end
         end)
     end
 end)
-
 
 
 local mevlanatoggle = false
