@@ -862,11 +862,11 @@ local rockList = {
 }
 
 local rockYOffset = {
-    ["Ancient Jungle Rock"] = -5,
+    ["Ancient Jungle Rock"] = -8,
     ["Muscle King Mountain"] = 0,
-    ["Rock Of Legends"] = 4,
-    ["Inferno Rock"] = 8,
-    ["Mystic Rock"] = 15
+    ["Rock Of Legends"] = 8,
+    ["Inferno Rock"] = 16,
+    ["Mystic Rock"] = 32
 }
 
 Tabs.Exploits:AddDropdown("FakeRockSelector", {
