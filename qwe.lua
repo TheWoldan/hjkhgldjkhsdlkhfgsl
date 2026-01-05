@@ -26,9 +26,9 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 -- TEXT BUTTON
 local button = Instance.new("TextButton")
-button.Size = UDim2.fromOffset(120, 45)
-button.Position = UDim2.new(0.45, -60, 0.4, -22) -- ekran ortası + hafif sol üst
-button.Text = "MENU"
+button.Size = UDim2.fromOffset(50, 50)
+button.Position = UDim2.new(0.35, -100, 0.3, -60) -- ekran ortası + hafif sol üst
+button.Text = "NL"
 button.TextSize = 18
 button.Font = Enum.Font.GothamBold
 button.TextColor3 = Color3.fromRGB(255,255,255)
@@ -87,10 +87,10 @@ button.MouseButton1Click:Connect(function()
 
     if opened then
         Window:Restore()
-        button.Text = "MENU"
+        button.Text = "NL"
     else
         Window:Minimize()
-        button.Text = "OPEN"
+        button.Text = "NL"
     end
 end)
 
@@ -856,17 +856,13 @@ local selectedRockName = "Muscle King Mountain"
 local rockList = {
     "Ancient Jungle Rock",
     "Muscle King Mountain",
-    "Rock Of Legends",
-    "Inferno Rock",
-    "Mystic Rock"
+    "Rock Of Legends"
 }
 
 local rockYOffset = {
-    ["Ancient Jungle Rock"] = -8,
+    ["Ancient Jungle Rock"] = -16,
     ["Muscle King Mountain"] = 0,
-    ["Rock Of Legends"] = 8,
-    ["Inferno Rock"] = 16,
-    ["Mystic Rock"] = 32
+    ["Rock Of Legends"] = 16
 }
 
 Tabs.Exploits:AddDropdown("FakeRockSelector", {
