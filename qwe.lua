@@ -310,95 +310,66 @@ end)
 
 
 -- ===============================
--- KILLER SYSTEM (ADVANCED)
+-- KILLER SYSTEM (FULL)
 -- ===============================
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local lp = Players.LocalPlayer
 
-local autoKillEnabled = false
-local killMode = "Target"        -- Target / All
-local bringMode = "Bring"        -- Bring / No Bring
+local autoKillAll = false
+local autoKillTarget = false
+local bringMode = "Bring"
 local selectedTarget = nil
 local whitelistTarget = nil
 
-local weldedTargets = {}
-
--- ===============================
--- PLAYER LIST
--- ===============================
-local playerNames = {}
-local targetDropdown
-local whitelistDropdown
-
-local function refreshPlayerList()
-    table.clear(playerNames)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= lp then
-            table.insert(playerNames, plr.Name)
-        end
-    end
-    if targetDropdown then targetDropdown:SetValues(playerNames) end
-    if whitelistDropdown then whitelistDropdown:SetValues(playerNames) end
-end
-
-refreshPlayerList()
+local welded = {}
 
 -- ===============================
 -- UI
 -- ===============================
-
-Tabs.Killer:AddDropdown("KillMode", {
-    Title = "Auto Kill Mode",
-    Values = {"Target", "All"},
-    Default = 1
-}):OnChanged(function(v)
-    killMode = v
-end)
-
 Tabs.Killer:AddDropdown("BringMode", {
     Title = "Bring Mode",
     Values = {"Bring", "No Bring"},
-    Default = 1
+    Default = "Bring"
 }):OnChanged(function(v)
     bringMode = v
 end)
 
-targetDropdown = Tabs.Killer:AddDropdown("KillTarget", {
-    Title = "Target Player",
-    Values = playerNames,
-    Multi = false,
-    Default = playerNames[1]
-})
+local playerList = {}
+local function refreshPlayers()
+    table.clear(playerList)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp then
+            table.insert(playerList, p.Name)
+        end
+    end
+end
+refreshPlayers()
 
-targetDropdown:OnChanged(function(v)
+Tabs.Killer:AddDropdown("TargetPlayer", {
+    Title = "Auto Kill Player",
+    Values = playerList,
+    Default = playerList[1]
+}):OnChanged(function(v)
     selectedTarget = v
 end)
 
-whitelistDropdown = Tabs.Killer:AddDropdown("WhitelistPlayer", {
-    Title = "Whitelist Player (Immune)",
-    Values = playerNames,
-    Multi = false,
+Tabs.Killer:AddDropdown("WhitelistPlayer", {
+    Title = "Whitelist Player",
+    Values = playerList,
     Default = nil
-})
-
-whitelistDropdown:OnChanged(function(v)
+}):OnChanged(function(v)
     whitelistTarget = v
 end)
 
 Tabs.Killer:AddButton({
     Title = "Refresh Player List",
-    Callback = refreshPlayerList
+    Callback = refreshPlayers
 })
 
 -- ===============================
 -- UTILS
 -- ===============================
-local function getChar(plr)
-    return plr.Character or plr.CharacterAdded:Wait()
-end
-
 local function getRightArm(char)
     return char:FindFirstChild("RightHand")
         or char:FindFirstChild("Right Arm")
@@ -406,137 +377,111 @@ local function getRightArm(char)
 end
 
 local function equipPunch()
-    local char = getChar(lp)
+    local char = lp.Character
+    if not char then return false end
     local tool = lp.Backpack:FindFirstChild("Punch") or char:FindFirstChild("Punch")
     if tool and tool.Parent ~= char then
         tool.Parent = char
     end
+    return char:FindFirstChild("Punch") ~= nil
 end
 
-local function clearWelds(part)
-    for _, v in ipairs(part:GetChildren()) do
-        if v:IsA("WeldConstraint") then
-            v:Destroy()
-        end
-    end
+local function weldHead(head, arm)
+    if welded[head] then return end
+    local w = Instance.new("WeldConstraint")
+    w.Part0 = arm
+    w.Part1 = head
+    w.Parent = arm
+    welded[head] = true
 end
 
 -- ===============================
--- BRING LOGIC
+-- BRING LOGIC (SAFE)
 -- ===============================
-local function bringFull(char)
-    local myChar = getChar(lp)
+local function bringCharacter(targetChar)
+    local myChar = lp.Character
+    if not myChar then return end
+
     local arm = getRightArm(myChar)
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not arm or not hrp then return end
-
-    clearWelds(arm)
-
-    local weld = Instance.new("WeldConstraint")
-    weld.Part0 = arm
-    weld.Part1 = hrp
-    weld.Parent = arm
-
-    hrp.CFrame = arm.CFrame * CFrame.new(0, -0.6, 0)
-end
-
-local function bringFaceOnly(char)
-    local myChar = getChar(lp)
-    local arm = getRightArm(myChar)
-    local head = char:FindFirstChild("Head")
+    local head = targetChar:FindFirstChild("Head")
     if not arm or not head then return end
 
-    local face = head:FindFirstChild("face")
-    if not face then return end
+    head.Anchored = false
+    head.CanCollide = false
 
-    clearWelds(arm)
-
-    face.Transparency = 1
-    face.CanCollide = false
-    face.Anchored = false
-    face.CFrame = arm.CFrame * CFrame.new(0.5, 0, 0)
-
-    local weld = Instance.new("WeldConstraint")
-    weld.Part0 = arm
-    weld.Part1 = face
-    weld.Parent = arm
-end
-
-local function handleBring(plr)
-    if weldedTargets[plr] then return end
-    if plr == lp then return end
-    if plr.Name == whitelistTarget then return end
-
-    local char = plr.Character
-    if not char then return end
-
-    equipPunch()
-
-    if bringMode == "Bring" then
-        bringFull(char)
+    if bringMode == "No Bring" then
+        head.Transparency = 1
+        head.CFrame = arm.CFrame * CFrame.new(0.7, 0, 0)
     else
-        bringFaceOnly(char)
+        head.Transparency = 0
+        head.CFrame = arm.CFrame * CFrame.new(0, -0.4, 0)
     end
 
-    weldedTargets[plr] = true
+    weldHead(head, arm)
 end
 
-local function clearTarget(plr)
-    weldedTargets[plr] = nil
-end
+-- ===============================
+-- CORE LOOP
+-- ===============================
+local function handleKill(plr)
+    if plr == lp then return end
+    if whitelistTarget and plr.Name == whitelistTarget then return end
+    if not plr.Character or not plr.Character:FindFirstChild("Head") then return end
 
--- Respawn tekrar yakalama
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= lp then
-        plr.CharacterAdded:Connect(function()
-            task.wait(0.3)
-            clearTarget(plr)
-        end)
-    end
-end
+    bringCharacter(plr.Character)
 
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function()
-        task.wait(0.3)
-        clearTarget(plr)
+    pcall(function()
+        lp.muscleEvent:FireServer("punch", "rightHand")
     end)
-end)
+end
 
 -- ===============================
--- AUTO KILL
+-- AUTO KILL ALL
 -- ===============================
-Tabs.Killer:AddToggle("AutoKill", {
-    Title = "Auto Kill",
+Tabs.Killer:AddToggle("AutoKillAll", {
+    Title = "Auto Kill (Everyone)",
     Default = false
 }):OnChanged(function(v)
-    autoKillEnabled = v
+    autoKillAll = v
 
     if v then
         task.spawn(function()
-            while autoKillEnabled do
-                if killMode == "Target" and selectedTarget then
-                    local plr = Players:FindFirstChild(selectedTarget)
-                    if plr then
-                        handleBring(plr)
-                    end
-                elseif killMode == "All" then
+            while autoKillAll do
+                if equipPunch() then
                     for _, plr in ipairs(Players:GetPlayers()) do
-                        handleBring(plr)
+                        handleKill(plr)
                     end
                 end
-
-                -- tek punch, lag yok
-                pcall(function()
-                    lp.muscleEvent:FireServer("punch", "rightHand")
-                end)
-
-                task.wait(0.15)
+                task.wait(0.12)
             end
         end)
-    else
-        table.clear(weldedTargets)
     end
 end)
+
+-- ===============================
+-- AUTO KILL PLAYER
+-- ===============================
+Tabs.Killer:AddToggle("AutoKillTarget", {
+    Title = "Auto Kill Player",
+    Default = false
+}):OnChanged(function(v)
+    autoKillTarget = v
+
+    if v then
+        task.spawn(function()
+            while autoKillTarget do
+                if equipPunch() and selectedTarget then
+                    local plr = Players:FindFirstChild(selectedTarget)
+                    if plr then
+                        handleKill(plr)
+                    end
+                end
+                task.wait(0.12)
+            end
+        end)
+    end
+end)
+
 
 
 local mevlanatoggle = false
