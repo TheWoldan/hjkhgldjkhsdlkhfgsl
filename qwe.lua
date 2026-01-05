@@ -458,7 +458,31 @@ local function bringTarget(plr)
         if noBringConnections[plr] then return end
 
         -- SADECE HEAD'i elin önünde sabitle
-        noBringConnections[plr] = RunService.Heartbeat:Connect(function()
+            local RunService = game:GetService("RunService")
+            
+            -- Daha stabil referans
+            local refPart =
+                myChar:FindFirstChild("RightLowerArm")
+                or myChar:FindFirstChild("RightHand")
+                or myChar:FindFirstChild("Right Arm")
+            
+            if not refPart then return end
+            
+            noBringConnections[plr] = RunService.RenderStepped:Connect(function()
+                if not head or not head.Parent or not refPart or not refPart.Parent then
+                    if noBringConnections[plr] then
+                        noBringConnections[plr]:Disconnect()
+                        noBringConnections[plr] = nil
+                    end
+                    return
+                end
+            
+                -- Ele TAM hizalama (daha içeri & sabit)
+                head.CFrame =
+                    refPart.CFrame
+                    * CFrame.new(0, -0.1, -0.35)
+                    * CFrame.Angles(0, math.rad(180), 0)
+            end)
             if not head or not head.Parent or not myHand or not myHand.Parent then
                 if noBringConnections[plr] then
                     noBringConnections[plr]:Disconnect()
