@@ -385,43 +385,62 @@ end
 -- ===============================
 -- BRING (HIT GUARANTEED)
 -- ===============================
+local function breakArms(targetChar)
+    pcall(function()
+        local leftArm =
+            targetChar:FindFirstChild("Left Arm")
+            or targetChar:FindFirstChild("LeftHand")
+            or targetChar:FindFirstChild("LeftLowerArm")
+
+        local rightArm =
+            targetChar:FindFirstChild("Right Arm")
+            or targetChar:FindFirstChild("RightHand")
+            or targetChar:FindFirstChild("RightLowerArm")
+
+        if leftArm then leftArm:Destroy() end
+        if rightArm then rightArm:Destroy() end
+    end)
+end
+
 local function bringTarget(plr)
     if plr == lp then return end
     if whitelistTarget and plr.Name == whitelistTarget then return end
 
-    local myChar = getChar(lp)
-    local myHRP = getHRP(myChar)
-
+    local myChar = lp.Character
     local targetChar = plr.Character
-    if not myHRP or not targetChar then return end
+    if not myChar or not targetChar then return end
 
-    local targetHRP = getHRP(targetChar)
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     local head = targetChar:FindFirstChild("Head")
-    if not targetHRP or not head then return end
+    if not myHRP or not targetHRP or not head then return end
 
-    -- fizik güvenliği
+    -- KOLLARI SİL (HER MODDA)
+    breakArms(targetChar)
+
+    -- Fizik güvenliği
     targetHRP.Velocity = Vector3.zero
     targetHRP.RotVelocity = Vector3.zero
     targetHRP.Anchored = false
     targetHRP.CanCollide = false
 
-    head.CanCollide = false
     head.Anchored = false
+    head.CanCollide = false
 
-    -- yumruk mesafesi (KRİTİK)
-    local offset =
-        bringMode == "Bring"
-        and CFrame.new(0, 0, -2.3)
-        or CFrame.new(1.2, 0, -2.3)
-
-    targetHRP.CFrame = myHRP.CFrame * offset
-
-    if bringMode == "No Bring" then
-        head.Transparency = 1
-    else
+    -- Bring Mode ayarları
+    if bringMode == "Bring" then
         head.Transparency = 0
+    else
+        head.Transparency = 1
     end
+
+    -- Yumruk mesafesi
+    local offset = CFrame.new(0, 0, -2.3)
+
+    -- SADECE TARGET ÇEKİLİR
+    targetHRP.CFrame = myHRP.CFrame * offset
 end
+
 
 -- ===============================
 -- ATTACK
