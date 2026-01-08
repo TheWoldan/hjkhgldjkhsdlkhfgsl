@@ -8,7 +8,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 local Window = Fluent:CreateWindow({
     Title = "Woldan Hub | Muscle Legends",
-    SubTitle = "V2.5.1 | Free Version | discord.gg/baristv44",
+    SubTitle = "V2.5.2 | Free Version | discord.gg/baristv44",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 260),
     Acrylic = true,
