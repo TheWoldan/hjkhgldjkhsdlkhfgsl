@@ -322,6 +322,8 @@ local lp = Players.LocalPlayer
 local autoKillEnabled = false
 local autoKillTargetEnabled = false
 local selectedTarget = nil
+local playerAddedConn
+local playerRemovingConn
 
 -- CACHE
 local cachedPlayers = {}
@@ -376,19 +378,31 @@ end
 
 local function removePlayer(plr)
     cachedPlayers[plr] = nil
-end
 
-local function initCache()
-    table.clear(cachedPlayers)
-    table.clear(destroyedCharacters)
-
-    for _, plr in ipairs(Players:GetPlayers()) do
-        addPlayer(plr)
+    if characterConnections[plr] then
+        characterConnections[plr]:Disconnect()
+        characterConnections[plr] = nil
     end
 end
 
-Players.PlayerAdded:Connect(addPlayer)
-Players.PlayerRemoving:Connect(removePlayer)
+function initCache()
+    table.clear(cachedPlayers)
+    table.clear(destroyedCharacters)
+
+    -- mevcut oyuncular
+    for _, plr in ipairs(Players:GetPlayers()) do
+        addPlayer(plr)
+    end
+
+    -- eventleri sadece 1 kere bağla
+    if not playerAddedConn then
+        playerAddedConn = Players.PlayerAdded:Connect(addPlayer)
+    end
+
+    if not playerRemovingConn then
+        playerRemovingConn = Players.PlayerRemoving:Connect(removePlayer)
+    end
+end
 
 ----------------------------------------------------
 -- 👊 TOOL CONTROL
@@ -436,6 +450,16 @@ Tabs.Killer:AddToggle("AutoKill", {
             conn:Disconnect()
         end
         table.clear(characterConnections)
+
+        if playerAddedConn then
+            playerAddedConn:Disconnect()
+            playerAddedConn = nil
+        end
+        
+        if playerRemovingConn then
+            playerRemovingConn:Disconnect()
+            playerRemovingConn = nil
+        end
     end
 end)
 
